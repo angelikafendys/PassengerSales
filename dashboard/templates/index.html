@@ -59,6 +59,17 @@
   <!-- MAIN CONTAINER -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
+    <!-- ERROR BANNER (Hidden by default) -->
+    <div id="data-error-banner" class="hidden bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-sm">
+      <div class="flex items-center gap-2 text-sm font-medium">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600 flex-shrink-0"></i>
+        <span id="data-error-msg">Gagal memuat data analitik.</span>
+      </div>
+      <button onclick="location.reload()" class="px-3 py-1 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700 transition">
+        Muat Ulang Halaman
+      </button>
+    </div>
+
     <!-- KPI SUMMARY CARDS -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Card 1: Total Tiket Booking -->
@@ -652,6 +663,7 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
+    window.EMBEDDED_DATA = null;
     let globalData = null;
     let dailyChart = null;
     let departureChart = null;
@@ -683,52 +695,124 @@
       return result;
     }
 
-    async function loadData() {
+    function safeRun(name, fn) {
       try {
-        const res = await fetch('/api/summary');
-        globalData = await res.json();
-        initKPIs();
-        initDailyTrendChart();
-        initHourlyChart();
-        initMonthlyChart();
-        initHeatmapChart();
-        initLeadTimeCharts();
-        initRouteCharts();
-        initChannelCharts();
-        initClassCharts();
-        // New charts
-        initDepartureChart();
-        initOccupancyScatterChart();
-        initDistanceClassCharts();
-        initSeasonalityChart();
-        lucide.createIcons();
+        if (typeof fn === 'function') {
+          fn();
+        }
+      } catch (err) {
+        console.error(`Error executing ${name}:`, err);
+      }
+    }
+
+    async function loadData() {
+      const errorBanner = document.getElementById('data-error-banner');
+      try {
+        // 1. Check for embedded data first (fastest, offline, zero network requests)
+        if (typeof window.EMBEDDED_DATA !== 'undefined' && window.EMBEDDED_DATA && window.EMBEDDED_DATA.kpi) {
+          globalData = window.EMBEDDED_DATA;
+        }
+
+        // 2. Fallback to static JSON file (works on Vercel deployment)
+        if (!globalData) {
+          try {
+            const res = await fetch('data/summary_insights.json');
+            if (res.ok) {
+              const parsed = await res.json();
+              if (parsed && parsed.kpi) {
+                globalData = parsed;
+              }
+            }
+          } catch (e) {
+            console.warn('Could not fetch data/summary_insights.json:', e);
+          }
+        }
+
+        // 3. Fallback to Flask backend API
+        if (!globalData) {
+          try {
+            const res = await fetch('/api/summary');
+            if (res.ok) {
+              const parsed = await res.json();
+              if (parsed && parsed.kpi) {
+                globalData = parsed;
+              }
+            }
+          } catch (e) {
+            console.warn('Could not fetch /api/summary:', e);
+          }
+        }
+
+        if (!globalData || !globalData.kpi) {
+          throw new Error('Data analitik tidak dapat dimuat. Pastikan file data/summary_insights.json tersedia.');
+        }
+
+        if (errorBanner) errorBanner.classList.add('hidden');
+
+        // Safely initialize all 9 tabs and components
+        safeRun('initKPIs', initKPIs);
+        safeRun('initDailyTrendChart', initDailyTrendChart);
+        safeRun('initHourlyChart', initHourlyChart);
+        safeRun('initMonthlyChart', initMonthlyChart);
+        safeRun('initHeatmapChart', initHeatmapChart);
+        safeRun('initLeadTimeCharts', initLeadTimeCharts);
+        safeRun('initRouteCharts', initRouteCharts);
+        safeRun('initChannelCharts', initChannelCharts);
+        safeRun('initClassCharts', initClassCharts);
+        safeRun('initDepartureChart', initDepartureChart);
+        safeRun('initOccupancyScatterChart', initOccupancyScatterChart);
+        safeRun('initDistanceClassCharts', initDistanceClassCharts);
+        safeRun('initSeasonalityChart', initSeasonalityChart);
+
+        if (window.lucide) {
+          lucide.createIcons();
+        }
       } catch (err) {
         console.error('Failed to load data:', err);
+        if (errorBanner) {
+          errorBanner.classList.remove('hidden');
+          const errMsg = document.getElementById('data-error-msg');
+          if (errMsg) errMsg.innerText = err.message || 'Gagal memuat data analitik.';
+          if (window.lucide) lucide.createIcons();
+        }
       }
     }
 
     function initKPIs() {
+      if (!globalData || !globalData.kpi) return;
       const kpi = globalData.kpi;
-      document.getElementById('kpi-tickets').innerText = formatNumber(kpi.total_tickets) + ' Tiket';
-      document.getElementById('kpi-revenue').innerText = formatRupiahShort(kpi.total_revenue);
-      document.getElementById('kpi-avg-price').innerText = formatRupiah(Math.round(kpi.total_revenue / kpi.total_tickets));
+      const elTickets = document.getElementById('kpi-tickets');
+      if (elTickets) elTickets.innerText = formatNumber(kpi.total_tickets) + ' Tiket';
+      
+      const elRev = document.getElementById('kpi-revenue');
+      if (elRev) elRev.innerText = formatRupiahShort(kpi.total_revenue);
+      
+      const elAvgPrice = document.getElementById('kpi-avg-price');
+      if (elAvgPrice) elAvgPrice.innerText = formatRupiah(Math.round(kpi.total_revenue / kpi.total_tickets));
       
       const totalDep = globalData.daily_departures 
         ? globalData.daily_departures.reduce((acc, d) => acc + d.passengers, 0)
         : 58884490;
-      document.getElementById('kpi-departures').innerText = formatNumber(totalDep) + ' Orang';
+      const elDep = document.getElementById('kpi-departures');
+      if (elDep) elDep.innerText = formatNumber(totalDep) + ' Orang';
 
       const peak = kpi.peak_day;
-      document.getElementById('kpi-peak-tickets').innerText = formatNumber(peak.tickets) + ' Tiket';
-      document.getElementById('kpi-peak-date').innerText = `Puncak: ${peak.date} (${peak.day_of_week}) • ${formatRupiahShort(peak.revenue)}`;
+      if (peak) {
+        const elPeakTick = document.getElementById('kpi-peak-tickets');
+        if (elPeakTick) elPeakTick.innerText = formatNumber(peak.tickets) + ' Tiket';
+        
+        const elPeakDate = document.getElementById('kpi-peak-date');
+        if (elPeakDate) elPeakDate.innerText = `Puncak: ${peak.date} (${peak.day_of_week}) • ${formatRupiahShort(peak.revenue)}`;
+      }
     }
 
     // MAIN TIME SERIES CHART (BOOKING VS DEPARTURE)
     function initDailyTrendChart() {
       const dom = document.getElementById('daily-trend-chart');
+      if (!dom || !globalData || !globalData.daily) return;
       dailyChart = echarts.init(dom);
       updateDailyTrendChart();
-      window.addEventListener('resize', () => dailyChart.resize());
+      window.addEventListener('resize', () => dailyChart && dailyChart.resize());
     }
 
     function updateDailyTrendChart() {
@@ -905,7 +989,9 @@
 
     // TAB 1: WAKTU & JAM SIBUK
     function initHourlyChart() {
-      const chart = echarts.init(document.getElementById('hourly-chart'));
+      const dom = document.getElementById('hourly-chart');
+      if (!dom || !globalData || !globalData.hourly) return;
+      const chart = echarts.init(dom);
       chart.setOption({
         tooltip: {
           trigger: 'axis',
@@ -926,7 +1012,9 @@
     }
 
     function initMonthlyChart() {
-      const chart = echarts.init(document.getElementById('monthly-chart'));
+      const dom = document.getElementById('monthly-chart');
+      if (!dom || !globalData || !globalData.monthly) return;
+      const chart = echarts.init(dom);
       chart.setOption({
         tooltip: { trigger: 'axis' },
         legend: { data: ['Volume Tiket (Juta)', 'Revenue (Triliun Rp)'], top: 0, textStyle: { fontSize: 10 } },
@@ -945,7 +1033,9 @@
     }
 
     function initHeatmapChart() {
-      const chart = echarts.init(document.getElementById('heatmap-chart'));
+      const dom = document.getElementById('heatmap-chart');
+      if (!dom || !globalData || !globalData.heatmap) return;
+      const chart = echarts.init(dom);
       const daysIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
       const hours = Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
       const heatmapData = globalData.heatmap.map(h => [h.hour, h.day_num, h.tickets]);
@@ -971,113 +1061,143 @@
 
     // TAB 2: LEAD TIME
     function initLeadTimeCharts() {
-      const pie = echarts.init(document.getElementById('leadtime-pie-chart'));
-      pie.setOption({
-        tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatNumber(p.value)} tiket (${p.percent}%)` },
-        legend: { orient: 'vertical', left: 'left', top: 'center', textStyle: { fontSize: 10 } },
-        series: [{
-          name: 'Lead Time', type: 'pie', radius: ['45%', '72%'], center: ['62%', '50%'],
-          itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
-          data: globalData.lead_time.map(lt => ({ name: lt.bucket, value: lt.tickets }))
-        }]
-      });
+      if (!globalData || !globalData.lead_time) return;
+      const domPie = document.getElementById('leadtime-pie-chart');
+      if (domPie) {
+        const pie = echarts.init(domPie);
+        pie.setOption({
+          tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatNumber(p.value)} tiket (${p.percent}%)` },
+          legend: { orient: 'vertical', left: 'left', top: 'center', textStyle: { fontSize: 10 } },
+          series: [{
+            name: 'Lead Time', type: 'pie', radius: ['45%', '72%'], center: ['62%', '50%'],
+            itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+            data: globalData.lead_time.map(lt => ({ name: lt.bucket, value: lt.tickets }))
+          }]
+        });
+        window.addEventListener('resize', () => pie.resize());
+      }
 
-      const bar = echarts.init(document.getElementById('leadtime-bar-chart'));
-      bar.setOption({
-        tooltip: { trigger: 'axis' },
-        legend: { data: ['Volume Tiket', 'Revenue (Miliar Rp)'], top: 0, textStyle: { fontSize: 10 } },
-        grid: { left: '3%', right: '3%', bottom: '8%', top: '15%', containLabel: true },
-        xAxis: { type: 'category', data: globalData.lead_time.map(lt => lt.bucket), axisLabel: { fontSize: 9 } },
-        yAxis: [
-          { type: 'value', name: 'Tiket', axisLabel: { formatter: v => (v / 1e6).toFixed(1) + 'M', fontSize: 9 } },
-          { type: 'value', name: 'Miliar Rp', axisLabel: { formatter: '{value}M', fontSize: 9 } }
-        ],
-        series: [
-          { name: 'Volume Tiket', type: 'bar', data: globalData.lead_time.map(lt => lt.tickets), itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] } },
-          { name: 'Revenue (Miliar Rp)', type: 'line', yAxisIndex: 1, data: globalData.lead_time.map(lt => Math.round(lt.revenue / 1e9)), lineStyle: { width: 2.5, color: '#10b981' }, itemStyle: { color: '#10b981' } }
-        ]
-      });
-
-      window.addEventListener('resize', () => { pie.resize(); bar.resize(); });
+      const domBar = document.getElementById('leadtime-bar-chart');
+      if (domBar) {
+        const bar = echarts.init(domBar);
+        bar.setOption({
+          tooltip: { trigger: 'axis' },
+          legend: { data: ['Volume Tiket', 'Revenue (Miliar Rp)'], top: 0, textStyle: { fontSize: 10 } },
+          grid: { left: '3%', right: '3%', bottom: '8%', top: '15%', containLabel: true },
+          xAxis: { type: 'category', data: globalData.lead_time.map(lt => lt.bucket), axisLabel: { fontSize: 9 } },
+          yAxis: [
+            { type: 'value', name: 'Tiket', axisLabel: { formatter: v => (v / 1e6).toFixed(1) + 'M', fontSize: 9 } },
+            { type: 'value', name: 'Miliar Rp', axisLabel: { formatter: '{value}M', fontSize: 9 } }
+          ],
+          series: [
+            { name: 'Volume Tiket', type: 'bar', data: globalData.lead_time.map(lt => lt.tickets), itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] } },
+            { name: 'Revenue (Miliar Rp)', type: 'line', yAxisIndex: 1, data: globalData.lead_time.map(lt => Math.round(lt.revenue / 1e9)), lineStyle: { width: 2.5, color: '#10b981' }, itemStyle: { color: '#10b981' } }
+          ]
+        });
+        window.addEventListener('resize', () => bar.resize());
+      }
     }
 
     // TAB 3: RUTE & KERETA
     function initRouteCharts() {
-      const routeChart = echarts.init(document.getElementById('routes-chart'));
-      const top10Routes = globalData.top_routes.slice(0, 10).reverse();
-      routeChart.setOption({
-        tooltip: { trigger: 'axis', formatter: p => `<b>${p[0].name}</b><br/>${formatNumber(p[0].value)} tiket` },
-        grid: { left: '3%', right: '8%', bottom: '3%', top: '3%', containLabel: true },
-        xAxis: { type: 'value', axisLabel: { formatter: v => (v / 1000) + 'k', fontSize: 9 } },
-        yAxis: { type: 'category', data: top10Routes.map(r => r.route), axisLabel: { fontSize: 10, fontWeight: 'bold' } },
-        series: [{ name: 'Tiket', type: 'bar', data: top10Routes.map(r => r.tickets), itemStyle: { color: '#3b82f6', borderRadius: [0, 4, 4, 0] } }]
-      });
+      if (!globalData || !globalData.top_routes || !globalData.top_trains) return;
+      const domRoutes = document.getElementById('routes-chart');
+      if (domRoutes) {
+        const routeChart = echarts.init(domRoutes);
+        const top10Routes = globalData.top_routes.slice(0, 10).reverse();
+        routeChart.setOption({
+          tooltip: { trigger: 'axis', formatter: p => `<b>${p[0].name}</b><br/>${formatNumber(p[0].value)} tiket` },
+          grid: { left: '3%', right: '8%', bottom: '3%', top: '3%', containLabel: true },
+          xAxis: { type: 'value', axisLabel: { formatter: v => (v / 1000) + 'k', fontSize: 9 } },
+          yAxis: { type: 'category', data: top10Routes.map(r => r.route), axisLabel: { fontSize: 10, fontWeight: 'bold' } },
+          series: [{ name: 'Tiket', type: 'bar', data: top10Routes.map(r => r.tickets), itemStyle: { color: '#3b82f6', borderRadius: [0, 4, 4, 0] } }]
+        });
+        window.addEventListener('resize', () => routeChart.resize());
+      }
 
-      const trainChart = echarts.init(document.getElementById('trains-chart'));
-      const top10Trains = globalData.top_trains.slice(0, 10).reverse();
-      trainChart.setOption({
-        tooltip: { trigger: 'axis', formatter: p => `<b>${p[0].name}</b><br/>${formatNumber(p[0].value)} tiket` },
-        grid: { left: '3%', right: '8%', bottom: '3%', top: '3%', containLabel: true },
-        xAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e6).toFixed(1) + 'M', fontSize: 9 } },
-        yAxis: { type: 'category', data: top10Trains.map(t => t.train_name), axisLabel: { fontSize: 10, fontWeight: 'bold' } },
-        series: [{ name: 'Tiket', type: 'bar', data: top10Trains.map(t => t.tickets), itemStyle: { color: '#10b981', borderRadius: [0, 4, 4, 0] } }]
-      });
+      const domTrains = document.getElementById('trains-chart');
+      if (domTrains) {
+        const trainChart = echarts.init(domTrains);
+        const top10Trains = globalData.top_trains.slice(0, 10).reverse();
+        trainChart.setOption({
+          tooltip: { trigger: 'axis', formatter: p => `<b>${p[0].name}</b><br/>${formatNumber(p[0].value)} tiket` },
+          grid: { left: '3%', right: '8%', bottom: '3%', top: '3%', containLabel: true },
+          xAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e6).toFixed(1) + 'M', fontSize: 9 } },
+          yAxis: { type: 'category', data: top10Trains.map(t => t.train_name), axisLabel: { fontSize: 10, fontWeight: 'bold' } },
+          series: [{ name: 'Tiket', type: 'bar', data: top10Trains.map(t => t.tickets), itemStyle: { color: '#10b981', borderRadius: [0, 4, 4, 0] } }]
+        });
+        window.addEventListener('resize', () => trainChart.resize());
+      }
 
       const tbody = document.getElementById('routes-table-body');
-      tbody.innerHTML = '';
-      globalData.top_routes.slice(0, 10).forEach((r, idx) => {
-        const tr = document.createElement('tr');
-        tr.className = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50';
-        tr.innerHTML = `
-          <td class="px-4 py-2.5 font-bold text-slate-400">#${idx + 1}</td>
-          <td class="px-4 py-2.5 font-bold text-slate-900">${r.route}</td>
-          <td class="px-4 py-2.5 text-right">${formatNumber(r.tickets)}</td>
-          <td class="px-4 py-2.5 text-right font-semibold text-emerald-700">${formatRupiahShort(r.revenue)}</td>
-          <td class="px-4 py-2.5 text-right text-slate-600">${formatRupiah(r.avg_price)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      window.addEventListener('resize', () => { routeChart.resize(); trainChart.resize(); });
+      if (tbody) {
+        tbody.innerHTML = '';
+        globalData.top_routes.slice(0, 10).forEach((r, idx) => {
+          const tr = document.createElement('tr');
+          tr.className = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50';
+          tr.innerHTML = `
+            <td class="px-4 py-2.5 font-bold text-slate-400">#${idx + 1}</td>
+            <td class="px-4 py-2.5 font-bold text-slate-900">${r.route}</td>
+            <td class="px-4 py-2.5 text-right">${formatNumber(r.tickets)}</td>
+            <td class="px-4 py-2.5 text-right font-semibold text-emerald-700">${formatRupiahShort(r.revenue)}</td>
+            <td class="px-4 py-2.5 text-right text-slate-600">${formatRupiah(r.avg_price)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
     }
 
     // TAB 4: KANAL & PEMBAYARAN
     function initChannelCharts() {
-      const channelChart = echarts.init(document.getElementById('channel-chart'));
-      channelChart.setOption({
-        tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatNumber(p.value)} tiket (${p.percent}%)` },
-        legend: { orient: 'vertical', left: 'left', top: 'center', textStyle: { fontSize: 10 } },
-        series: [{ name: 'Channel', type: 'pie', radius: ['45%', '70%'], center: ['62%', '50%'], data: globalData.channels.map(c => ({ name: c.channel, value: c.tickets })) }]
-      });
+      if (!globalData || !globalData.channels || !globalData.payments) return;
+      const domChannel = document.getElementById('channel-chart');
+      if (domChannel) {
+        const channelChart = echarts.init(domChannel);
+        channelChart.setOption({
+          tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatNumber(p.value)} tiket (${p.percent}%)` },
+          legend: { orient: 'vertical', left: 'left', top: 'center', textStyle: { fontSize: 10 } },
+          series: [{ name: 'Channel', type: 'pie', radius: ['45%', '70%'], center: ['62%', '50%'], data: globalData.channels.map(c => ({ name: c.channel, value: c.tickets })) }]
+        });
+        window.addEventListener('resize', () => channelChart.resize());
+      }
 
-      const payChart = echarts.init(document.getElementById('payment-chart'));
-      const topPay = globalData.payments.slice(0, 8).reverse();
-      payChart.setOption({
-        tooltip: { trigger: 'axis', formatter: p => `<b>${p[0].name}</b><br/>${formatNumber(p[0].value)} tiket` },
-        grid: { left: '3%', right: '8%', bottom: '3%', top: '3%', containLabel: true },
-        xAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e6).toFixed(1) + 'M', fontSize: 9 } },
-        yAxis: { type: 'category', data: topPay.map(p => `${p.pay_type} (${p.pic_pay})`), axisLabel: { fontSize: 9 } },
-        series: [{ name: 'Tiket', type: 'bar', data: topPay.map(p => p.tickets), itemStyle: { color: '#8b5cf6', borderRadius: [0, 4, 4, 0] } }]
-      });
-
-      window.addEventListener('resize', () => { channelChart.resize(); payChart.resize(); });
+      const domPay = document.getElementById('payment-chart');
+      if (domPay) {
+        const payChart = echarts.init(domPay);
+        const topPay = globalData.payments.slice(0, 8).reverse();
+        payChart.setOption({
+          tooltip: { trigger: 'axis', formatter: p => `<b>${p[0].name}</b><br/>${formatNumber(p[0].value)} tiket` },
+          grid: { left: '3%', right: '8%', bottom: '3%', top: '3%', containLabel: true },
+          xAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e6).toFixed(1) + 'M', fontSize: 9 } },
+          yAxis: { type: 'category', data: topPay.map(p => `${p.pay_type} (${p.pic_pay})`), axisLabel: { fontSize: 9 } },
+          series: [{ name: 'Tiket', type: 'bar', data: topPay.map(p => p.tickets), itemStyle: { color: '#8b5cf6', borderRadius: [0, 4, 4, 0] } }]
+        });
+        window.addEventListener('resize', () => payChart.resize());
+      }
     }
 
     // TAB 5: KELAS KERETA
     function initClassCharts() {
-      const volChart = echarts.init(document.getElementById('class-volume-chart'));
-      volChart.setOption({
-        tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatNumber(p.value)} tiket (${p.percent}%)` },
-        series: [{ name: 'Volume', type: 'pie', radius: '65%', data: globalData.classes.map(c => ({ name: c.wagon_class, value: c.tickets })) }]
-      });
+      if (!globalData || !globalData.classes) return;
+      const domVol = document.getElementById('class-volume-chart');
+      if (domVol) {
+        const volChart = echarts.init(domVol);
+        volChart.setOption({
+          tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatNumber(p.value)} tiket (${p.percent}%)` },
+          series: [{ name: 'Volume', type: 'pie', radius: '65%', data: globalData.classes.map(c => ({ name: c.wagon_class, value: c.tickets })) }]
+        });
+        window.addEventListener('resize', () => volChart.resize());
+      }
 
-      const revChart = echarts.init(document.getElementById('class-revenue-chart'));
-      revChart.setOption({
-        tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatRupiah(p.value)} (${p.percent}%)` },
-        series: [{ name: 'Revenue', type: 'pie', radius: '65%', data: globalData.classes.map(c => ({ name: c.wagon_class, value: c.revenue })) }]
-      });
-
-      window.addEventListener('resize', () => { volChart.resize(); revChart.resize(); });
+      const domRev = document.getElementById('class-revenue-chart');
+      if (domRev) {
+        const revChart = echarts.init(domRev);
+        revChart.setOption({
+          tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatRupiah(p.value)} (${p.percent}%)` },
+          series: [{ name: 'Revenue', type: 'pie', radius: '65%', data: globalData.classes.map(c => ({ name: c.wagon_class, value: c.revenue })) }]
+        });
+        window.addEventListener('resize', () => revChart.resize());
+      }
     }
 
     // NEW TAB 6: TRIPDATE DEPARTURES CHART

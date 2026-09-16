@@ -1,10 +1,9 @@
 {
   "version": 2,
   "cleanUrls": true,
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+  "rewrites": [
+    { "source": "/api/summary", "destination": "/data/summary_insights.json" },
+    { "source": "/api/export-csv", "destination": "/data/daily_summary.csv" }
   ]
 }
+

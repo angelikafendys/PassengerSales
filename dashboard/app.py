@@ -1,6 +1,6 @@
 import os
 import json
-from flask import Flask, render_template, jsonify, send_file, request
+from flask import Flask, render_template, jsonify, send_file, send_from_directory, request
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -12,6 +12,10 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/data/<path:filename>")
+def get_data_file(filename):
+    return send_from_directory(DATA_DIR, filename)
 
 @app.route("/api/summary")
 def get_summary():

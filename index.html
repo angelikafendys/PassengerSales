@@ -59,6 +59,17 @@
   <!-- MAIN CONTAINER -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
+    <!-- ERROR BANNER (Hidden by default) -->
+    <div id="data-error-banner" class="hidden bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-sm">
+      <div class="flex items-center gap-2 text-sm font-medium">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600 flex-shrink-0"></i>
+        <span id="data-error-msg">Gagal memuat data analitik.</span>
+      </div>
+      <button onclick="location.reload()" class="px-3 py-1 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700 transition">
+        Muat Ulang Halaman
+      </button>
+    </div>
+
     <!-- KPI SUMMARY CARDS -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Card 1: Total Tiket Booking -->
@@ -652,41 +663,7 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    let globalData = null;
-    let dailyChart = null;
-    let departureChart = null;
-    let currentViewMode = 'booking'; // 'booking', 'departure', 'both'
-    let currentMA = 'raw';            // 'raw', '7', '30'
-
-    const formatNumber = num => new Intl.NumberFormat('id-ID').format(num);
-    const formatRupiah = num => 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
-    const formatRupiahShort = num => {
-      if (num >= 1e12) return 'Rp ' + (num / 1e12).toFixed(2) + ' T';
-      if (num >= 1e9) return 'Rp ' + (num / 1e9).toFixed(2) + ' M';
-      if (num >= 1e6) return 'Rp ' + (num / 1e6).toFixed(1) + ' Jt';
-      return 'Rp ' + formatNumber(num);
-    };
-
-    function calculateMA(dayCount, dataList, metricKey) {
-      let result = [];
-      for (let i = 0; i < dataList.length; i++) {
-        if (i < dayCount - 1) {
-          result.push(null);
-          continue;
-        }
-        let sum = 0;
-        for (let j = 0; j < dayCount; j++) {
-          sum += dataList[i - j][metricKey];
-        }
-        result.push(Math.round(sum / dayCount));
-      }
-      return result;
-    }
-
-    
-    async function loadData() {
-      try {
-        globalData = {
+    window.EMBEDDED_DATA = {
   "kpi": {
     "total_tickets": 60243878,
     "total_revenue": 11364822546072,
@@ -31680,21 +31657,739 @@
     }
   ]
 };
-        initKPIs();
-        initDailyTrendChart();
-        initHourlyChart();
-        initMonthlyChart();
-        initHeatmapChart();
-        initLeadTimeCharts();
-        initRouteCharts();
-        initChannelCharts();
-        initClassCharts();
-        lucide.createIcons();
+    let globalData = null;
+    let dailyChart = null;
+    let departureChart = null;
+    let currentViewMode = 'booking'; // 'booking', 'departure', 'both'
+    let currentMA = 'raw';            // 'raw', '7', '30'
+
+    const formatNumber = num => new Intl.NumberFormat('id-ID').format(num);
+    const formatRupiah = num => 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
+    const formatRupiahShort = num => {
+      if (num >= 1e12) return 'Rp ' + (num / 1e12).toFixed(2) + ' T';
+      if (num >= 1e9) return 'Rp ' + (num / 1e9).toFixed(2) + ' M';
+      if (num >= 1e6) return 'Rp ' + (num / 1e6).toFixed(1) + ' Jt';
+      return 'Rp ' + formatNumber(num);
+    };
+
+    function calculateMA(dayCount, dataList, metricKey) {
+      let result = [];
+      for (let i = 0; i < dataList.length; i++) {
+        if (i < dayCount - 1) {
+          result.push(null);
+          continue;
+        }
+        let sum = 0;
+        for (let j = 0; j < dayCount; j++) {
+          sum += dataList[i - j][metricKey];
+        }
+        result.push(Math.round(sum / dayCount));
+      }
+      return result;
+    }
+
+    function safeRun(name, fn) {
+      try {
+        if (typeof fn === 'function') {
+          fn();
+        }
       } catch (err) {
-        console.error('Failed to load embedded data:', err);
+        console.error(`Error executing ${name}:`, err);
       }
     }
-    
+
+    async function loadData() {
+      const errorBanner = document.getElementById('data-error-banner');
+      try {
+        // 1. Check for embedded data first (fastest, offline, zero network requests)
+        if (typeof window.EMBEDDED_DATA !== 'undefined' && window.EMBEDDED_DATA && window.EMBEDDED_DATA.kpi) {
+          globalData = window.EMBEDDED_DATA;
+        }
+
+        // 2. Fallback to static JSON file (works on Vercel deployment)
+        if (!globalData) {
+          try {
+            const res = await fetch('data/summary_insights.json');
+            if (res.ok) {
+              const parsed = await res.json();
+              if (parsed && parsed.kpi) {
+                globalData = parsed;
+              }
+            }
+          } catch (e) {
+            console.warn('Could not fetch data/summary_insights.json:', e);
+          }
+        }
+
+        // 3. Fallback to Flask backend API
+        if (!globalData) {
+          try {
+            const res = await fetch('/api/summary');
+            if (res.ok) {
+              const parsed = await res.json();
+              if (parsed && parsed.kpi) {
+                globalData = parsed;
+              }
+            }
+          } catch (e) {
+            console.warn('Could not fetch /api/summary:', e);
+          }
+        }
+
+        if (!globalData || !globalData.kpi) {
+          throw new Error('Data analitik tidak dapat dimuat. Pastikan file data/summary_insights.json tersedia.');
+        }
+
+        if (errorBanner) errorBanner.classList.add('hidden');
+
+        // Safely initialize all 9 tabs and components
+        safeRun('initKPIs', initKPIs);
+        safeRun('initDailyTrendChart', initDailyTrendChart);
+        safeRun('initHourlyChart', initHourlyChart);
+        safeRun('initMonthlyChart', initMonthlyChart);
+        safeRun('initHeatmapChart', initHeatmapChart);
+        safeRun('initLeadTimeCharts', initLeadTimeCharts);
+        safeRun('initRouteCharts', initRouteCharts);
+        safeRun('initChannelCharts', initChannelCharts);
+        safeRun('initClassCharts', initClassCharts);
+        safeRun('initDepartureChart', initDepartureChart);
+        safeRun('initOccupancyScatterChart', initOccupancyScatterChart);
+        safeRun('initDistanceClassCharts', initDistanceClassCharts);
+        safeRun('initSeasonalityChart', initSeasonalityChart);
+
+        if (window.lucide) {
+          lucide.createIcons();
+        }
+      } catch (err) {
+        console.error('Failed to load data:', err);
+        if (errorBanner) {
+          errorBanner.classList.remove('hidden');
+          const errMsg = document.getElementById('data-error-msg');
+          if (errMsg) errMsg.innerText = err.message || 'Gagal memuat data analitik.';
+          if (window.lucide) lucide.createIcons();
+        }
+      }
+    }
+
+    function initKPIs() {
+      if (!globalData || !globalData.kpi) return;
+      const kpi = globalData.kpi;
+      const elTickets = document.getElementById('kpi-tickets');
+      if (elTickets) elTickets.innerText = formatNumber(kpi.total_tickets) + ' Tiket';
+      
+      const elRev = document.getElementById('kpi-revenue');
+      if (elRev) elRev.innerText = formatRupiahShort(kpi.total_revenue);
+      
+      const elAvgPrice = document.getElementById('kpi-avg-price');
+      if (elAvgPrice) elAvgPrice.innerText = formatRupiah(Math.round(kpi.total_revenue / kpi.total_tickets));
+      
+      const totalDep = globalData.daily_departures 
+        ? globalData.daily_departures.reduce((acc, d) => acc + d.passengers, 0)
+        : 58884490;
+      const elDep = document.getElementById('kpi-departures');
+      if (elDep) elDep.innerText = formatNumber(totalDep) + ' Orang';
+
+      const peak = kpi.peak_day;
+      if (peak) {
+        const elPeakTick = document.getElementById('kpi-peak-tickets');
+        if (elPeakTick) elPeakTick.innerText = formatNumber(peak.tickets) + ' Tiket';
+        
+        const elPeakDate = document.getElementById('kpi-peak-date');
+        if (elPeakDate) elPeakDate.innerText = `Puncak: ${peak.date} (${peak.day_of_week}) • ${formatRupiahShort(peak.revenue)}`;
+      }
+    }
+
+    // MAIN TIME SERIES CHART (BOOKING VS DEPARTURE)
+    function initDailyTrendChart() {
+      const dom = document.getElementById('daily-trend-chart');
+      if (!dom || !globalData || !globalData.daily) return;
+      dailyChart = echarts.init(dom);
+      updateDailyTrendChart();
+      window.addEventListener('resize', () => dailyChart && dailyChart.resize());
+    }
+
+    function updateDailyTrendChart() {
+      const dates = globalData.daily.map(d => d.date);
+      const bookingValues = globalData.daily.map(d => d.tickets);
+      
+      // Match departure values to the same date sequence
+      const depMap = {};
+      if (globalData.daily_departures) {
+        globalData.daily_departures.forEach(dp => depMap[dp.date] = dp.passengers);
+      }
+      const depValues = dates.map(dt => depMap[dt] || null);
+
+      let series = [];
+
+      if (currentViewMode === 'booking' || currentViewMode === 'both') {
+        const ma7 = calculateMA(7, globalData.daily, 'tickets');
+        const ma30 = calculateMA(30, globalData.daily, 'tickets');
+
+        series.push({
+          name: 'Pemesanan (Booking)',
+          type: 'line',
+          data: currentMA === 'raw' ? bookingValues : (currentMA === '7' ? ma7 : ma30),
+          smooth: currentMA !== 'raw',
+          symbol: 'circle',
+          symbolSize: currentMA === 'raw' ? 2 : 0,
+          lineStyle: { width: 2, color: '#3b82f6' },
+          areaStyle: currentViewMode === 'booking' ? {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(59, 130, 246, 0.25)' },
+              { offset: 1, color: 'rgba(59, 130, 246, 0.01)' }
+            ])
+          } : null
+        });
+      }
+
+      if (currentViewMode === 'departure' || currentViewMode === 'both') {
+        series.push({
+          name: 'Keberangkatan (Tripdate)',
+          type: 'line',
+          data: depValues,
+          smooth: true,
+          symbol: 'circle',
+          symbolSize: currentMA === 'raw' ? 2 : 0,
+          lineStyle: { width: 2.2, color: '#10b981' },
+          areaStyle: currentViewMode === 'departure' ? {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(16, 185, 129, 0.25)' },
+              { offset: 1, color: 'rgba(16, 185, 129, 0.01)' }
+            ])
+          } : null
+        });
+      }
+
+      const option = {
+        tooltip: {
+          trigger: 'axis',
+          formatter: params => {
+            let str = `<div class="font-bold text-xs pb-1 mb-1 border-b border-slate-200">${params[0].axisValue}</div>`;
+            params.forEach(p => {
+              if (p.value !== null) {
+                str += `<div class="text-xs flex items-center justify-between gap-4 py-0.5">
+                  <span>${p.marker} ${p.seriesName}:</span>
+                  <span class="font-bold">${formatNumber(p.value)} penumpang</span>
+                </div>`;
+              }
+            });
+            return str;
+          }
+        },
+        legend: {
+          data: series.map(s => s.name),
+          top: 0,
+          textStyle: { fontSize: 11 }
+        },
+        grid: {
+          left: '3%', right: '3%', bottom: '18%', top: '12%', containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: dates,
+          axisLine: { lineStyle: { color: '#cbd5e1' } },
+          axisLabel: { color: '#64748b', fontSize: 10 }
+        },
+        yAxis: {
+          type: 'value',
+          splitLine: { lineStyle: { color: '#f1f5f9' } },
+          axisLabel: {
+            color: '#64748b',
+            fontSize: 10,
+            formatter: val => (val / 1000) + 'k'
+          }
+        },
+        dataZoom: [
+          {
+            type: 'slider',
+            start: 0,
+            end: 100,
+            height: 24,
+            bottom: 6,
+            borderColor: '#e2e8f0',
+            fillerColor: 'rgba(59, 130, 246, 0.15)',
+            handleStyle: { color: '#3b82f6' }
+          },
+          { type: 'inside' }
+        ],
+        series: series
+      };
+
+      dailyChart.setOption(option, true);
+    }
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      document.getElementById('btn-view-booking').className = mode === 'booking' 
+        ? 'px-2.5 py-1.5 rounded-lg bg-white shadow-sm text-slate-900 font-semibold transition'
+        : 'px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      document.getElementById('btn-view-departure').className = mode === 'departure' 
+        ? 'px-2.5 py-1.5 rounded-lg bg-white shadow-sm text-slate-900 font-semibold transition'
+        : 'px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      document.getElementById('btn-view-both').className = mode === 'both' 
+        ? 'px-2.5 py-1.5 rounded-lg bg-white shadow-sm text-slate-900 font-semibold transition'
+        : 'px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      updateDailyTrendChart();
+    }
+
+    function setMA(ma) {
+      currentMA = ma;
+      document.getElementById('btn-ma-raw').className = ma === 'raw' 
+        ? 'px-2.5 py-1.5 rounded-lg bg-white shadow-sm text-slate-900 font-semibold transition'
+        : 'px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      document.getElementById('btn-ma-7').className = ma === '7' 
+        ? 'px-2.5 py-1.5 rounded-lg bg-white shadow-sm text-slate-900 font-semibold transition'
+        : 'px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      document.getElementById('btn-ma-30').className = ma === '30' 
+        ? 'px-2.5 py-1.5 rounded-lg bg-white shadow-sm text-slate-900 font-semibold transition'
+        : 'px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      updateDailyTrendChart();
+    }
+
+    function zoomRange(preset) {
+      if (!dailyChart) return;
+      let start = 0, end = 100;
+      if (preset === 'q1') { start = 0; end = 25; }
+      else if (preset === 'lebaran') { start = 18; end = 33; }
+      else if (preset === 'q2') { start = 25; end = 50; }
+      else if (preset === 'liburan') { start = 42; end = 58; }
+      else if (preset === 'q3') { start = 50; end = 75; }
+      else if (preset === 'q4') { start = 75; end = 100; }
+      else if (preset === 'nataru') { start = 88; end = 100; }
+      
+      dailyChart.dispatchAction({ type: 'dataZoom', start: start, end: end });
+    }
+
+    // TAB SWITCHING (Supports all 9 tabs)
+    function switchTab(tabId) {
+      const tabs = ['waktu', 'leadtime', 'rute', 'kanal', 'kelas', 'tripdate', 'okupansi', 'jarak', 'musiman'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const content = document.getElementById(`tab-content-${t}`);
+        if (btn && content) {
+          if (t === tabId) {
+            btn.className = 'py-3.5 px-3 text-xs font-semibold text-blue-600 border-b-2 border-blue-600 whitespace-nowrap flex items-center gap-1.5';
+            content.classList.remove('hidden');
+          } else {
+            btn.className = 'py-3.5 px-3 text-xs font-semibold text-slate-500 hover:text-slate-800 border-b-2 border-transparent whitespace-nowrap flex items-center gap-1.5';
+            content.classList.add('hidden');
+          }
+        }
+      });
+
+      setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 50);
+    }
+
+    // TAB 1: WAKTU & JAM SIBUK
+    function initHourlyChart() {
+      const dom = document.getElementById('hourly-chart');
+      if (!dom || !globalData || !globalData.hourly) return;
+      const chart = echarts.init(dom);
+      chart.setOption({
+        tooltip: {
+          trigger: 'axis',
+          formatter: p => `<b>Jam ${p[0].axisValue}</b><br/>${p[0].marker} ${formatNumber(p[0].value)} tiket`
+        },
+        grid: { left: '3%', right: '3%', bottom: '8%', top: '8%', containLabel: true },
+        xAxis: { type: 'category', data: globalData.hourly.map(h => `${h.hour.toString().padStart(2, '0')}:00`), axisLabel: { fontSize: 9 } },
+        yAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e6).toFixed(1) + 'M', fontSize: 10 } },
+        series: [{
+          name: 'Tiket', type: 'bar', data: globalData.hourly.map(h => h.tickets),
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#3b82f6' }, { offset: 1, color: '#60a5fa' }]),
+            borderRadius: [4, 4, 0, 0]
+          }
+        }]
+      });
+      window.addEventListener('resize', () => chart.resize());
+    }
+
+    function initMonthlyChart() {
+      const dom = document.getElementById('monthly-chart');
+      if (!dom || !globalData || !globalData.monthly) return;
+      const chart = echarts.init(dom);
+      chart.setOption({
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['Volume Tiket (Juta)', 'Revenue (Triliun Rp)'], top: 0, textStyle: { fontSize: 10 } },
+        grid: { left: '3%', right: '3%', bottom: '8%', top: '15%', containLabel: true },
+        xAxis: { type: 'category', data: globalData.monthly.map(m => m.month_name), axisLabel: { fontSize: 9, rotate: 30 } },
+        yAxis: [
+          { type: 'value', name: 'Tiket (Juta)', axisLabel: { formatter: v => (v / 1e6).toFixed(1) + 'M', fontSize: 9 } },
+          { type: 'value', name: 'Rp (Triliun)', axisLabel: { formatter: '{value}T', fontSize: 9 } }
+        ],
+        series: [
+          { name: 'Volume Tiket (Juta)', type: 'bar', data: globalData.monthly.map(m => m.tickets), itemStyle: { color: '#6366f1', borderRadius: [4, 4, 0, 0] } },
+          { name: 'Revenue (Triliun Rp)', type: 'line', yAxisIndex: 1, data: globalData.monthly.map(m => (m.revenue / 1e12).toFixed(2)), lineStyle: { width: 2.5, color: '#10b981' }, symbol: 'circle', symbolSize: 6, itemStyle: { color: '#10b981' } }
+        ]
+      });
+      window.addEventListener('resize', () => chart.resize());
+    }
+
+    function initHeatmapChart() {
+      const dom = document.getElementById('heatmap-chart');
+      if (!dom || !globalData || !globalData.heatmap) return;
+      const chart = echarts.init(dom);
+      const daysIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      const hours = Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+      const heatmapData = globalData.heatmap.map(h => [h.hour, h.day_num, h.tickets]);
+      const maxTickets = Math.max(...globalData.heatmap.map(h => h.tickets));
+
+      chart.setOption({
+        tooltip: {
+          position: 'top',
+          formatter: p => `${daysIndo[p.value[1]]}, Jam ${hours[p.value[0]]}<br/><b>${formatNumber(p.value[2])} tiket</b>`
+        },
+        grid: { left: '4%', right: '3%', bottom: '8%', top: '8%', containLabel: true },
+        xAxis: { type: 'category', data: hours, splitArea: { show: true }, axisLabel: { fontSize: 9 } },
+        yAxis: { type: 'category', data: daysIndo, splitArea: { show: true }, axisLabel: { fontSize: 10 } },
+        visualMap: {
+          min: 0, max: maxTickets, calculable: true, orient: 'horizontal', left: 'center', bottom: '0%',
+          inRange: { color: ['#eff6ff', '#bfdbfe', '#60a5fa', '#2563eb', '#1e40af'] },
+          textStyle: { fontSize: 9 }
+        },
+        series: [{ name: 'Pemesanan', type: 'heatmap', data: heatmapData }]
+      });
+      window.addEventListener('resize', () => chart.resize());
+    }
+
+    // TAB 2: LEAD TIME
+    function initLeadTimeCharts() {
+      if (!globalData || !globalData.lead_time) return;
+      const domPie = document.getElementById('leadtime-pie-chart');
+      if (domPie) {
+        const pie = echarts.init(domPie);
+        pie.setOption({
+          tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatNumber(p.value)} tiket (${p.percent}%)` },
+          legend: { orient: 'vertical', left: 'left', top: 'center', textStyle: { fontSize: 10 } },
+          series: [{
+            name: 'Lead Time', type: 'pie', radius: ['45%', '72%'], center: ['62%', '50%'],
+            itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+            data: globalData.lead_time.map(lt => ({ name: lt.bucket, value: lt.tickets }))
+          }]
+        });
+        window.addEventListener('resize', () => pie.resize());
+      }
+
+      const domBar = document.getElementById('leadtime-bar-chart');
+      if (domBar) {
+        const bar = echarts.init(domBar);
+        bar.setOption({
+          tooltip: { trigger: 'axis' },
+          legend: { data: ['Volume Tiket', 'Revenue (Miliar Rp)'], top: 0, textStyle: { fontSize: 10 } },
+          grid: { left: '3%', right: '3%', bottom: '8%', top: '15%', containLabel: true },
+          xAxis: { type: 'category', data: globalData.lead_time.map(lt => lt.bucket), axisLabel: { fontSize: 9 } },
+          yAxis: [
+            { type: 'value', name: 'Tiket', axisLabel: { formatter: v => (v / 1e6).toFixed(1) + 'M', fontSize: 9 } },
+            { type: 'value', name: 'Miliar Rp', axisLabel: { formatter: '{value}M', fontSize: 9 } }
+          ],
+          series: [
+            { name: 'Volume Tiket', type: 'bar', data: globalData.lead_time.map(lt => lt.tickets), itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] } },
+            { name: 'Revenue (Miliar Rp)', type: 'line', yAxisIndex: 1, data: globalData.lead_time.map(lt => Math.round(lt.revenue / 1e9)), lineStyle: { width: 2.5, color: '#10b981' }, itemStyle: { color: '#10b981' } }
+          ]
+        });
+        window.addEventListener('resize', () => bar.resize());
+      }
+    }
+
+    // TAB 3: RUTE & KERETA
+    function initRouteCharts() {
+      if (!globalData || !globalData.top_routes || !globalData.top_trains) return;
+      const domRoutes = document.getElementById('routes-chart');
+      if (domRoutes) {
+        const routeChart = echarts.init(domRoutes);
+        const top10Routes = globalData.top_routes.slice(0, 10).reverse();
+        routeChart.setOption({
+          tooltip: { trigger: 'axis', formatter: p => `<b>${p[0].name}</b><br/>${formatNumber(p[0].value)} tiket` },
+          grid: { left: '3%', right: '8%', bottom: '3%', top: '3%', containLabel: true },
+          xAxis: { type: 'value', axisLabel: { formatter: v => (v / 1000) + 'k', fontSize: 9 } },
+          yAxis: { type: 'category', data: top10Routes.map(r => r.route), axisLabel: { fontSize: 10, fontWeight: 'bold' } },
+          series: [{ name: 'Tiket', type: 'bar', data: top10Routes.map(r => r.tickets), itemStyle: { color: '#3b82f6', borderRadius: [0, 4, 4, 0] } }]
+        });
+        window.addEventListener('resize', () => routeChart.resize());
+      }
+
+      const domTrains = document.getElementById('trains-chart');
+      if (domTrains) {
+        const trainChart = echarts.init(domTrains);
+        const top10Trains = globalData.top_trains.slice(0, 10).reverse();
+        trainChart.setOption({
+          tooltip: { trigger: 'axis', formatter: p => `<b>${p[0].name}</b><br/>${formatNumber(p[0].value)} tiket` },
+          grid: { left: '3%', right: '8%', bottom: '3%', top: '3%', containLabel: true },
+          xAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e6).toFixed(1) + 'M', fontSize: 9 } },
+          yAxis: { type: 'category', data: top10Trains.map(t => t.train_name), axisLabel: { fontSize: 10, fontWeight: 'bold' } },
+          series: [{ name: 'Tiket', type: 'bar', data: top10Trains.map(t => t.tickets), itemStyle: { color: '#10b981', borderRadius: [0, 4, 4, 0] } }]
+        });
+        window.addEventListener('resize', () => trainChart.resize());
+      }
+
+      const tbody = document.getElementById('routes-table-body');
+      if (tbody) {
+        tbody.innerHTML = '';
+        globalData.top_routes.slice(0, 10).forEach((r, idx) => {
+          const tr = document.createElement('tr');
+          tr.className = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50';
+          tr.innerHTML = `
+            <td class="px-4 py-2.5 font-bold text-slate-400">#${idx + 1}</td>
+            <td class="px-4 py-2.5 font-bold text-slate-900">${r.route}</td>
+            <td class="px-4 py-2.5 text-right">${formatNumber(r.tickets)}</td>
+            <td class="px-4 py-2.5 text-right font-semibold text-emerald-700">${formatRupiahShort(r.revenue)}</td>
+            <td class="px-4 py-2.5 text-right text-slate-600">${formatRupiah(r.avg_price)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    // TAB 4: KANAL & PEMBAYARAN
+    function initChannelCharts() {
+      if (!globalData || !globalData.channels || !globalData.payments) return;
+      const domChannel = document.getElementById('channel-chart');
+      if (domChannel) {
+        const channelChart = echarts.init(domChannel);
+        channelChart.setOption({
+          tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatNumber(p.value)} tiket (${p.percent}%)` },
+          legend: { orient: 'vertical', left: 'left', top: 'center', textStyle: { fontSize: 10 } },
+          series: [{ name: 'Channel', type: 'pie', radius: ['45%', '70%'], center: ['62%', '50%'], data: globalData.channels.map(c => ({ name: c.channel, value: c.tickets })) }]
+        });
+        window.addEventListener('resize', () => channelChart.resize());
+      }
+
+      const domPay = document.getElementById('payment-chart');
+      if (domPay) {
+        const payChart = echarts.init(domPay);
+        const topPay = globalData.payments.slice(0, 8).reverse();
+        payChart.setOption({
+          tooltip: { trigger: 'axis', formatter: p => `<b>${p[0].name}</b><br/>${formatNumber(p[0].value)} tiket` },
+          grid: { left: '3%', right: '8%', bottom: '3%', top: '3%', containLabel: true },
+          xAxis: { type: 'value', axisLabel: { formatter: v => (v / 1e6).toFixed(1) + 'M', fontSize: 9 } },
+          yAxis: { type: 'category', data: topPay.map(p => `${p.pay_type} (${p.pic_pay})`), axisLabel: { fontSize: 9 } },
+          series: [{ name: 'Tiket', type: 'bar', data: topPay.map(p => p.tickets), itemStyle: { color: '#8b5cf6', borderRadius: [0, 4, 4, 0] } }]
+        });
+        window.addEventListener('resize', () => payChart.resize());
+      }
+    }
+
+    // TAB 5: KELAS KERETA
+    function initClassCharts() {
+      if (!globalData || !globalData.classes) return;
+      const domVol = document.getElementById('class-volume-chart');
+      if (domVol) {
+        const volChart = echarts.init(domVol);
+        volChart.setOption({
+          tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatNumber(p.value)} tiket (${p.percent}%)` },
+          series: [{ name: 'Volume', type: 'pie', radius: '65%', data: globalData.classes.map(c => ({ name: c.wagon_class, value: c.tickets })) }]
+        });
+        window.addEventListener('resize', () => volChart.resize());
+      }
+
+      const domRev = document.getElementById('class-revenue-chart');
+      if (domRev) {
+        const revChart = echarts.init(domRev);
+        revChart.setOption({
+          tooltip: { trigger: 'item', formatter: p => `<b>${p.name}</b><br/>${formatRupiah(p.value)} (${p.percent}%)` },
+          series: [{ name: 'Revenue', type: 'pie', radius: '65%', data: globalData.classes.map(c => ({ name: c.wagon_class, value: c.revenue })) }]
+        });
+        window.addEventListener('resize', () => revChart.resize());
+      }
+    }
+
+    // NEW TAB 6: TRIPDATE DEPARTURES CHART
+    function initDepartureChart() {
+      const dom = document.getElementById('departure-trend-chart');
+      if (!dom || !globalData.daily_departures) return;
+      departureChart = echarts.init(dom);
+      const depDates = globalData.daily_departures.map(d => d.date);
+      const depPass = globalData.daily_departures.map(d => d.passengers);
+
+      departureChart.setOption({
+        tooltip: {
+          trigger: 'axis',
+          formatter: p => `<b>${p[0].axisValue}</b><br/>Keberangkatan: <b>${formatNumber(p[0].value)} penumpang</b>`
+        },
+        grid: { left: '3%', right: '3%', bottom: '15%', top: '8%', containLabel: true },
+        xAxis: { type: 'category', data: depDates, axisLabel: { fontSize: 10 } },
+        yAxis: { type: 'value', axisLabel: { formatter: v => (v / 1000) + 'k', fontSize: 10 } },
+        dataZoom: [{ type: 'slider', height: 20, bottom: 0 }, { type: 'inside' }],
+        series: [{
+          name: 'Keberangkatan',
+          type: 'line',
+          data: depPass,
+          smooth: true,
+          lineStyle: { color: '#10b981', width: 2 },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(16, 185, 129, 0.3)' },
+              { offset: 1, color: 'rgba(16, 185, 129, 0.02)' }
+            ])
+          }
+        }]
+      });
+      window.addEventListener('resize', () => departureChart.resize());
+    }
+
+    // NEW TAB 7: OKUPANSI VS REVENUE (EXCEL SCATTER & TABLE)
+    function initOccupancyScatterChart() {
+      const dom = document.getElementById('occupancy-scatter-chart');
+      if (!dom || !globalData.quadrant_trains) return;
+      const chart = echarts.init(dom);
+
+      const scatterData = globalData.quadrant_trains.map(t => [
+        t.occupancy_pct,
+        Math.round(t.revenue / 1e9),
+        t.train_name,
+        t.relasi,
+        t.class,
+        t.km
+      ]);
+
+      chart.setOption({
+        tooltip: {
+          formatter: p => `
+            <div class="text-xs">
+              <p class="font-bold text-slate-900">${p.value[2]} (${p.value[4]})</p>
+              <p class="text-slate-500">Relasi: ${p.value[3]} • Jarak: ${p.value[5]} km</p>
+              <p class="text-indigo-600 font-bold mt-1">Okupansi: ${p.value[0]}%</p>
+              <p class="text-emerald-600 font-bold">Revenue: Rp ${p.value[1]} Miliar</p>
+            </div>
+          `
+        },
+        grid: { left: '4%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
+        xAxis: {
+          type: 'value',
+          name: 'Okupansi Statis (%)',
+          nameLocation: 'middle',
+          nameGap: 28,
+          splitLine: { lineStyle: { color: '#f1f5f9' } },
+          axisLabel: { formatter: '{value}%', fontSize: 10 }
+        },
+        yAxis: {
+          type: 'value',
+          name: 'Revenue (Miliar Rp)',
+          splitLine: { lineStyle: { color: '#f1f5f9' } },
+          axisLabel: { formatter: '{value}M', fontSize: 10 }
+        },
+        series: [{
+          name: 'Kereta Api',
+          type: 'scatter',
+          symbolSize: val => Math.min(Math.max(val[1] * 0.4, 8), 35),
+          data: scatterData,
+          itemStyle: {
+            color: '#6366f1',
+            opacity: 0.8,
+            borderColor: '#4f46e5',
+            borderWidth: 1
+          }
+        }]
+      });
+
+      // Populate Table
+      const tbody = document.getElementById('quadrant-table-body');
+      if (tbody) {
+        tbody.innerHTML = '';
+        globalData.quadrant_trains.slice(0, 15).forEach(t => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="px-4 py-2.5 font-bold text-slate-900">${t.train_name}</td>
+            <td class="px-4 py-2.5 text-slate-600">${t.relasi}</td>
+            <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100">${t.class}</span></td>
+            <td class="px-4 py-2.5 text-right">${t.km} km</td>
+            <td class="px-4 py-2.5 text-right font-bold ${t.occupancy_pct >= 70 ? 'text-emerald-600' : 'text-slate-700'}">${t.occupancy_pct}%</td>
+            <td class="px-4 py-2.5 text-right font-semibold text-emerald-700">${formatRupiahShort(t.revenue)}</td>
+            <td class="px-4 py-2.5 text-right text-slate-500">${formatRupiahShort(t.daily_rev)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      window.addEventListener('resize', () => chart.resize());
+    }
+
+    // NEW TAB 8: DISTANCE & CLASS CHARTS
+    function initDistanceClassCharts() {
+      const domRev = document.getElementById('distance-revenue-chart');
+      const domOcc = document.getElementById('distance-occupancy-chart');
+      if (!domRev || !domOcc || !globalData.distance_class) return;
+
+      const chartRev = echarts.init(domRev);
+      const chartOcc = echarts.init(domOcc);
+
+      const tiers = ['JAUH', 'SEDANG', 'DEKAT'];
+      const eksRev = tiers.map(t => {
+        const item = globalData.distance_class.find(x => x.tier === t && (x.class === 'EKS' || x.class === 'LOK EKS'));
+        return item ? Math.round(item.revenue / 1e12 * 100) / 100 : 0;
+      });
+      const ekoRev = tiers.map(t => {
+        const item = globalData.distance_class.find(x => x.tier === t && (x.class === 'EKO' || x.class === 'LOK EKO'));
+        return item ? Math.round(item.revenue / 1e12 * 100) / 100 : 0;
+      });
+
+      chartRev.setOption({
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['Eksekutif (EKS)', 'Ekonomi (EKO)'], top: 0, textStyle: { fontSize: 10 } },
+        grid: { left: '3%', right: '3%', bottom: '8%', top: '15%', containLabel: true },
+        xAxis: { type: 'category', data: ['Tier JAUH (>500km)', 'Tier SEDANG (200-500km)', 'Tier DEKAT (<200km)'], axisLabel: { fontSize: 10 } },
+        yAxis: { type: 'value', name: 'Triliun Rp', axisLabel: { formatter: '{value}T', fontSize: 10 } },
+        series: [
+          { name: 'Eksekutif (EKS)', type: 'bar', stack: 'total', data: eksRev, itemStyle: { color: '#3b82f6' } },
+          { name: 'Ekonomi (EKO)', type: 'bar', stack: 'total', data: ekoRev, itemStyle: { color: '#10b981' } }
+        ]
+      });
+
+      const eksOcc = tiers.map(t => {
+        const item = globalData.distance_class.find(x => x.tier === t && (x.class === 'EKS' || x.class === 'LOK EKS'));
+        return item ? item.avg_occupancy_pct : 0;
+      });
+      const ekoOcc = tiers.map(t => {
+        const item = globalData.distance_class.find(x => x.tier === t && (x.class === 'EKO' || x.class === 'LOK EKO'));
+        return item ? item.avg_occupancy_pct : 0;
+      });
+
+      chartOcc.setOption({
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['Okupansi EKS (%)', 'Okupansi EKO (%)'], top: 0, textStyle: { fontSize: 10 } },
+        grid: { left: '3%', right: '3%', bottom: '8%', top: '15%', containLabel: true },
+        xAxis: { type: 'category', data: ['Tier JAUH', 'Tier SEDANG', 'Tier DEKAT'], axisLabel: { fontSize: 10 } },
+        yAxis: { type: 'value', name: 'Okupansi %', axisLabel: { formatter: '{value}%', fontSize: 10 }, max: 100 },
+        series: [
+          { name: 'Okupansi EKS (%)', type: 'bar', data: eksOcc, itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] } },
+          { name: 'Okupansi EKO (%)', type: 'bar', data: ekoOcc, itemStyle: { color: '#10b981', borderRadius: [4, 4, 0, 0] } }
+        ]
+      });
+
+      window.addEventListener('resize', () => { chartRev.resize(); chartOcc.resize(); });
+    }
+
+    // NEW TAB 9: SEASONALITY CHART
+    function initSeasonalityChart() {
+      const dom = document.getElementById('seasonality-chart');
+      if (!dom || !globalData.seasonality) return;
+      const chart = echarts.init(dom);
+
+      const seasons = ['Juli (Libur Sekolah)', 'Oktober (Musim Reguler)', 'Desember (Nataru)'];
+      const eksOcc = seasons.map(s => {
+        const item = globalData.seasonality.find(x => x.season === s && x.class === 'EKS');
+        return item ? item.occupancy_pct : 0;
+      });
+      const ekoOcc = seasons.map(s => {
+        const item = globalData.seasonality.find(x => x.season === s && x.class === 'EKO');
+        return item ? item.occupancy_pct : 0;
+      });
+
+      chart.setOption({
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['Okupansi Eksekutif (%)', 'Okupansi Ekonomi (%)'], top: 0, textStyle: { fontSize: 10 } },
+        grid: { left: '3%', right: '3%', bottom: '8%', top: '15%', containLabel: true },
+        xAxis: { type: 'category', data: seasons, axisLabel: { fontSize: 11, fontWeight: 'bold' } },
+        yAxis: { type: 'value', name: 'Rata-rata Okupansi (%)', axisLabel: { formatter: '{value}%', fontSize: 10 }, max: 105 },
+        series: [
+          { name: 'Okupansi Eksekutif (%)', type: 'bar', data: eksOcc, itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] } },
+          { name: 'Okupansi Ekonomi (%)', type: 'bar', data: ekoOcc, itemStyle: { color: '#10b981', borderRadius: [4, 4, 0, 0] } }
+        ]
+      });
+
+      window.addEventListener('resize', () => chart.resize());
+    }
+
     window.addEventListener('DOMContentLoaded', loadData);
   </script>
 </body>
