@@ -34,3 +34,7 @@ data/tmp/
 !data/daily_summary.csv
 !data/departure_daily_summary.csv
 !data/summary_insights.json
+!data/train_classes_summary.csv
+!data/train_performance_quadrant.csv
+!data/train_classes.json
+!data/quadrant_trains.json

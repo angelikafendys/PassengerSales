@@ -1,0 +1,602 @@
+[
+  {
+    "train_name": "TAKSAKA",
+    "relasi": "GMR-YK",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 512.0,
+    "occupancy_pct": 80.5,
+    "revenue": 180754188000.0,
+    "daily_rev": 169881756.0
+  },
+  {
+    "train_name": "TAKSAKA",
+    "relasi": "YK-GMR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 512.0,
+    "occupancy_pct": 78.2,
+    "revenue": 172731416000.0,
+    "daily_rev": 162341556.0
+  },
+  {
+    "train_name": "SEMBRANI",
+    "relasi": "SBI-GMR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 720.0,
+    "occupancy_pct": 72.7,
+    "revenue": 120090983000.0,
+    "daily_rev": 165414577.0
+  },
+  {
+    "train_name": "MANAHAN",
+    "relasi": "GMR-SLO",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 571.0,
+    "occupancy_pct": 88.3,
+    "revenue": 118506113000.0,
+    "daily_rev": 165050297.0
+  },
+  {
+    "train_name": "SEMBRANI",
+    "relasi": "GMR-SBI",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 720.0,
+    "occupancy_pct": 71.2,
+    "revenue": 115032754000.0,
+    "daily_rev": 158447320.0
+  },
+  {
+    "train_name": "MANAHAN",
+    "relasi": "SLO-GMR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 571.0,
+    "occupancy_pct": 70.5,
+    "revenue": 94979553000.0,
+    "daily_rev": 132283500.0
+  },
+  {
+    "train_name": "ARGO MERBABU",
+    "relasi": "GMR-SMT",
+    "class": "EKS",
+    "tier": "SEDANG",
+    "km": 440.0,
+    "occupancy_pct": 55.8,
+    "revenue": 94762305000.0,
+    "daily_rev": 91823939.0
+  },
+  {
+    "train_name": "ARGO MERBABU",
+    "relasi": "SMT-GMR",
+    "class": "EKS",
+    "tier": "SEDANG",
+    "km": 440.0,
+    "occupancy_pct": 54.3,
+    "revenue": 93554911000.0,
+    "daily_rev": 90653984.0
+  },
+  {
+    "train_name": "SAWUNGGALIH",
+    "relasi": "PSE-KTA",
+    "class": "EKO",
+    "tier": "SEDANG",
+    "km": 447.0,
+    "occupancy_pct": 81.7,
+    "revenue": 92452303000.0,
+    "daily_rev": 86973004.0
+  },
+  {
+    "train_name": "JAYAKARTA",
+    "relasi": "PSE-SGU",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 820.0,
+    "occupancy_pct": 92.8,
+    "revenue": 91679432000.0,
+    "daily_rev": 251176526.0
+  },
+  {
+    "train_name": "ARGO SEMERU",
+    "relasi": "GMR-SGU",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 821.0,
+    "occupancy_pct": 109.3,
+    "revenue": 91678901000.0,
+    "daily_rev": 251175071.0
+  },
+  {
+    "train_name": "PANDALUNGAN",
+    "relasi": "JR-SBI-GMR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 919.0,
+    "occupancy_pct": 150.9,
+    "revenue": 91665477000.0,
+    "daily_rev": 251138293.0
+  },
+  {
+    "train_name": "ARGO SEMERU",
+    "relasi": "SGU-GMR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 821.0,
+    "occupancy_pct": 103.7,
+    "revenue": 90557266000.0,
+    "daily_rev": 248102099.0
+  },
+  {
+    "train_name": "SAWUNGGALIH",
+    "relasi": "KTA-PSE",
+    "class": "EKO",
+    "tier": "SEDANG",
+    "km": 447.0,
+    "occupancy_pct": 80.0,
+    "revenue": 89293053000.0,
+    "daily_rev": 84000991.0
+  },
+  {
+    "train_name": "PANDALUNGAN",
+    "relasi": "GMR-SBI-JR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 919.0,
+    "occupancy_pct": 128.9,
+    "revenue": 87433940000.0,
+    "daily_rev": 239545041.0
+  },
+  {
+    "train_name": "KERTAJAYA",
+    "relasi": "SBI-PSE",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 719.0,
+    "occupancy_pct": 84.6,
+    "revenue": 86837983000.0,
+    "daily_rev": 237912282.0
+  },
+  {
+    "train_name": "BIMA",
+    "relasi": "SGU-GMR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 821.0,
+    "occupancy_pct": 95.9,
+    "revenue": 84026761000.0,
+    "daily_rev": 230210304.0
+  },
+  {
+    "train_name": "ARGO SINDORO",
+    "relasi": "SMT-GMR",
+    "class": "EKS",
+    "tier": "SEDANG",
+    "km": 440.0,
+    "occupancy_pct": 64.9,
+    "revenue": 83763763000.0,
+    "daily_rev": 114902281.0
+  },
+  {
+    "train_name": "JAYAKARTA",
+    "relasi": "SGU-PSE",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 820.0,
+    "occupancy_pct": 93.2,
+    "revenue": 83741975000.0,
+    "daily_rev": 229430068.0
+  },
+  {
+    "train_name": "KERTAJAYA",
+    "relasi": "PSE-SBI",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 719.0,
+    "occupancy_pct": 84.2,
+    "revenue": 78942328000.0,
+    "daily_rev": 216280351.0
+  },
+  {
+    "train_name": "MAJAPAHIT",
+    "relasi": "ML-PSE",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 880.0,
+    "occupancy_pct": 133.6,
+    "revenue": 78741302000.0,
+    "daily_rev": 215729595.0
+  },
+  {
+    "train_name": "MAJAPAHIT",
+    "relasi": "PSE-ML",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 880.0,
+    "occupancy_pct": 129.8,
+    "revenue": 77858515000.0,
+    "daily_rev": 213311000.0
+  },
+  {
+    "train_name": "GAJAYANA",
+    "relasi": "GMR-ML",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 905.0,
+    "occupancy_pct": 95.9,
+    "revenue": 77858374000.0,
+    "daily_rev": 213310614.0
+  },
+  {
+    "train_name": "ARGO MURIA",
+    "relasi": "GMR-SMT",
+    "class": "EKS",
+    "tier": "SEDANG",
+    "km": 440.0,
+    "occupancy_pct": 57.9,
+    "revenue": 77481531000.0,
+    "daily_rev": 102083704.0
+  },
+  {
+    "train_name": "BIMA",
+    "relasi": "GMR-SGU",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 821.0,
+    "occupancy_pct": 84.7,
+    "revenue": 73699712000.0,
+    "daily_rev": 201917019.0
+  },
+  {
+    "train_name": "MALABAR",
+    "relasi": "BD-ML",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 780.0,
+    "occupancy_pct": 129.3,
+    "revenue": 73070029000.0,
+    "daily_rev": 104535092.0
+  },
+  {
+    "train_name": "MALABAR",
+    "relasi": "BD-ML",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 780.0,
+    "occupancy_pct": 161.1,
+    "revenue": 69147301000.0,
+    "daily_rev": 98923177.0
+  },
+  {
+    "train_name": "GAJAYANA",
+    "relasi": "ML-GMR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 905.0,
+    "occupancy_pct": 115.2,
+    "revenue": 69027273000.0,
+    "daily_rev": 189115816.0
+  },
+  {
+    "train_name": "MATARMAJA",
+    "relasi": "ML-PSE",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 880.0,
+    "occupancy_pct": 106.7,
+    "revenue": 68805531000.0,
+    "daily_rev": 188508304.0
+  },
+  {
+    "train_name": "ARGO BROMO ANGGREK PAGI",
+    "relasi": "GMR-SBI",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 720.0,
+    "occupancy_pct": 75.1,
+    "revenue": 68545536000.0,
+    "daily_rev": 189352309.0
+  },
+  {
+    "train_name": "SANCAKA",
+    "relasi": "YK-SGU",
+    "class": "EKO",
+    "tier": "SEDANG",
+    "km": 309.0,
+    "occupancy_pct": 70.8,
+    "revenue": 67943897000.0,
+    "daily_rev": 51085637.0
+  },
+  {
+    "train_name": "MATARMAJA",
+    "relasi": "PSE-ML",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 880.0,
+    "occupancy_pct": 103.8,
+    "revenue": 67600555000.0,
+    "daily_rev": 185207000.0
+  },
+  {
+    "train_name": "ARGO DWIPANGGA",
+    "relasi": "GMR-SLO",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 571.0,
+    "occupancy_pct": 102.1,
+    "revenue": 66344990000.0,
+    "daily_rev": 181767096.0
+  },
+  {
+    "train_name": "ARGO WILIS",
+    "relasi": "BD-SGU",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 696.0,
+    "occupancy_pct": 107.1,
+    "revenue": 66031197000.0,
+    "daily_rev": 169310762.0
+  },
+  {
+    "train_name": "BRAWIJAYA",
+    "relasi": "ML-GMR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 881.0,
+    "occupancy_pct": 82.8,
+    "revenue": 65508834000.0,
+    "daily_rev": 179476258.0
+  },
+  {
+    "train_name": "MALABAR",
+    "relasi": "ML-BD",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 780.0,
+    "occupancy_pct": 153.5,
+    "revenue": 64539542000.0,
+    "daily_rev": 92331247.0
+  },
+  {
+    "train_name": "ARGO BROMO ANGGREK PAGI",
+    "relasi": "SBI-GMR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 720.0,
+    "occupancy_pct": 70.0,
+    "revenue": 63659369000.0,
+    "daily_rev": 175854610.0
+  },
+  {
+    "train_name": "MALABAR",
+    "relasi": "ML-BD",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 780.0,
+    "occupancy_pct": 107.6,
+    "revenue": 63538162000.0,
+    "daily_rev": 90898658.0
+  },
+  {
+    "train_name": "SANCAKA",
+    "relasi": "YK-SGU",
+    "class": "EKS",
+    "tier": "SEDANG",
+    "km": 309.0,
+    "occupancy_pct": 89.0,
+    "revenue": 63120256000.0,
+    "daily_rev": 47458839.0
+  },
+  {
+    "train_name": "SANCAKA",
+    "relasi": "SGU-YK",
+    "class": "EKO",
+    "tier": "SEDANG",
+    "km": 309.0,
+    "occupancy_pct": 65.9,
+    "revenue": 63086474000.0,
+    "daily_rev": 47433439.0
+  },
+  {
+    "train_name": "BRAWIJAYA",
+    "relasi": "GMR-ML",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 881.0,
+    "occupancy_pct": 81.3,
+    "revenue": 61900686000.0,
+    "daily_rev": 169590921.0
+  },
+  {
+    "train_name": "ARGO LAWU",
+    "relasi": "SLO-GMR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 571.0,
+    "occupancy_pct": 91.2,
+    "revenue": 60306176000.0,
+    "daily_rev": 165222400.0
+  },
+  {
+    "train_name": "ARGO WILIS",
+    "relasi": "SGU-BD",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 696.0,
+    "occupancy_pct": 95.6,
+    "revenue": 59994855000.0,
+    "daily_rev": 155025465.0
+  },
+  {
+    "train_name": "BLAMBANGAN EKSPRES",
+    "relasi": "PSE-SMT-SBI-KTG",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 1030.0,
+    "occupancy_pct": 157.9,
+    "revenue": 59728916000.0,
+    "daily_rev": 163640866.0
+  },
+  {
+    "train_name": "LOGAWA",
+    "relasi": "PWT-SGU-KTG",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 782.0,
+    "occupancy_pct": 142.4,
+    "revenue": 58790354000.0,
+    "daily_rev": 176019024.0
+  },
+  {
+    "train_name": "ARGO BROMO ANGGREK MALAM",
+    "relasi": "SBI-GMR",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 720.0,
+    "occupancy_pct": 58.2,
+    "revenue": 57942742000.0,
+    "daily_rev": 159183357.0
+  },
+  {
+    "train_name": "PROGO",
+    "relasi": "PSE-LPN",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 512.0,
+    "occupancy_pct": 107.9,
+    "revenue": 57870465000.0,
+    "daily_rev": 158549219.0
+  },
+  {
+    "train_name": "ARGO BROMO ANGGREK MALAM",
+    "relasi": "GMR-SBI",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 720.0,
+    "occupancy_pct": 57.7,
+    "revenue": 57594995000.0,
+    "daily_rev": 157794507.0
+  },
+  {
+    "train_name": "BLAMBANGAN EKSPRES",
+    "relasi": "KTG-SBI-SMT-PSE",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 1030.0,
+    "occupancy_pct": 160.9,
+    "revenue": 57334816000.0,
+    "daily_rev": 157081688.0
+  },
+  {
+    "train_name": "SANCAKA",
+    "relasi": "SGU-YK",
+    "class": "EKS",
+    "tier": "SEDANG",
+    "km": 309.0,
+    "occupancy_pct": 80.0,
+    "revenue": 56984873000.0,
+    "daily_rev": 42845769.0
+  },
+  {
+    "train_name": "PROGO",
+    "relasi": "LPN-PSE",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 512.0,
+    "occupancy_pct": 107.9,
+    "revenue": 55585487000.0,
+    "daily_rev": 152289005.0
+  },
+  {
+    "train_name": "HARINA",
+    "relasi": "SBI-CKP-BD",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 731.0,
+    "occupancy_pct": 100.5,
+    "revenue": 54961455000.0,
+    "daily_rev": 78628691.0
+  },
+  {
+    "train_name": "HARINA",
+    "relasi": "BD-CKP-SBI",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 731.0,
+    "occupancy_pct": 98.2,
+    "revenue": 54186436000.0,
+    "daily_rev": 77519937.0
+  },
+  {
+    "train_name": "LOGAWA",
+    "relasi": "KTG-SGU-PWT",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 782.0,
+    "occupancy_pct": 127.5,
+    "revenue": 53211107000.0,
+    "daily_rev": 159314692.0
+  },
+  {
+    "train_name": "MENOREH",
+    "relasi": "SMT-PSE",
+    "class": "EKO",
+    "tier": "SEDANG",
+    "km": 439.0,
+    "occupancy_pct": 87.1,
+    "revenue": 52137277000.0,
+    "daily_rev": 78166832.0
+  },
+  {
+    "train_name": "TURANGGA",
+    "relasi": "SGU-BD",
+    "class": "EKS",
+    "tier": "JAUH",
+    "km": 696.0,
+    "occupancy_pct": 96.9,
+    "revenue": 52024475000.0,
+    "daily_rev": 142532808.0
+  },
+  {
+    "train_name": "MATARAM",
+    "relasi": "PSE-SLO",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 570.0,
+    "occupancy_pct": 86.6,
+    "revenue": 50444474000.0,
+    "daily_rev": 138204038.0
+  },
+  {
+    "train_name": "JAYABAYA",
+    "relasi": "PSE-SBI-ML",
+    "class": "EKO",
+    "tier": "JAUH",
+    "km": 817.0,
+    "occupancy_pct": 152.4,
+    "revenue": 48926556000.0,
+    "daily_rev": 134045359.0
+  },
+  {
+    "train_name": "PURWOJAYA",
+    "relasi": "CP-KYA-GMR",
+    "class": "EKS",
+    "tier": "SEDANG",
+    "km": 406.0,
+    "occupancy_pct": 61.4,
+    "revenue": 48519023000.0,
+    "daily_rev": 85571469.0
+  },
+  {
+    "train_name": "LODAYA",
+    "relasi": "SLO-BD",
+    "class": "EKO",
+    "tier": "SEDANG",
+    "km": 447.0,
+    "occupancy_pct": 108.5,
+    "revenue": 47369453000.0,
+    "daily_rev": 64889662.0
+  }
+]

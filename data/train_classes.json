@@ -1,0 +1,20 @@
+[
+  {
+    "wagon_class": "EKO",
+    "tickets": 44527450,
+    "revenue": 5345577341072,
+    "pct": 73.91
+  },
+  {
+    "wagon_class": "EKS",
+    "tickets": 14826586,
+    "revenue": 5856406162000,
+    "pct": 24.61
+  },
+  {
+    "wagon_class": "BIS",
+    "tickets": 889842,
+    "revenue": 162839043000,
+    "pct": 1.48
+  }
+]

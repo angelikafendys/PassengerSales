@@ -3,6 +3,8 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/api/summary", "destination": "/data/summary_insights.json" },
+    { "source": "/api/classes", "destination": "/data/train_classes.json" },
+    { "source": "/api/quadrant", "destination": "/data/quadrant_trains.json" },
     { "source": "/api/export-csv", "destination": "/data/daily_summary.csv" }
   ]
 }
