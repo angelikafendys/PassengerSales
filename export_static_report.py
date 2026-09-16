@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 INSIGHTS_JSON = os.path.join(DATA_DIR, "summary_insights.json")
 TEMPLATE_PATH = os.path.join(BASE_DIR, "dashboard", "templates", "index.html")
-OUTPUT_HTML = os.path.join(BASE_DIR, "laporan_tren_booking_2025.html")
+OUTPUT_HTML = os.path.join(BASE_DIR, "index.html")
 
 def generate_report():
     print("Reading data and template...")
